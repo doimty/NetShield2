@@ -2,7 +2,7 @@
 #import "../Shared/NSHostsParser.h"
 #import "../Shared/NSLocalization.h"
 #import <dispatch/dispatch.h>
-#include <arpa/inet.h>
+#include "../Shared/NSStrictAddress.h"
 
 NSString *const NSHostsDownloadErrorDomain = @"NSHostsDownloadErrorDomain";
 
@@ -25,7 +25,7 @@ static BOOL IsHex(unichar c) {
 static BOOL ValidHost(NSString *host, BOOL ipv6) {
     unsigned char address[16];
     if (ipv6) {
-        return inet_pton(AF_INET6, host.UTF8String, address) == 1;
+        return NSStrictInetPton(AF_INET6, host.UTF8String, address) == 1;
     }
     if ([host hasSuffix:@"."]) {
         host = [host substringToIndex:host.length - 1];
@@ -41,7 +41,7 @@ static BOOL ValidHost(NSString *host, BOOL ipv6) {
         }
     }
     if (numeric && [host containsString:@"."]) {
-        return inet_pton(AF_INET, host.UTF8String, address) == 1;
+        return NSStrictInetPton(AF_INET, host.UTF8String, address) == 1;
     }
     for (NSString *label in [host componentsSeparatedByString:@"."]) {
         if (label.length == 0 || label.length > 63 || [label hasPrefix:@"-"] || [label hasSuffix:@"-"]) {

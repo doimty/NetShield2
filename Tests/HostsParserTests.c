@@ -64,6 +64,15 @@ static void Syntax(void) {
               "\xe4\xb8\xad.example valid.example xn--fiqs8s.example\n",
               &c);
     CHECK(s.invalidLines == 11 && s.invalidNames == 12 && s.acceptedNames == 2);
+    const char *ambiguous[] = {"00.0.0.0",         "127.00.0.1",        "127.0.0.", "::1%lo0", "::%lo0",
+                               "fe80::1%nosuchif", "::ffff:127.00.0.1", "::0.0.0.", "[::1]"};
+    for (size_t i = 0; i < sizeof(ambiguous) / sizeof(ambiguous[0]); i++) {
+        char line[96];
+        (void)snprintf(line, sizeof(line), "%s unsafe.example", ambiguous[i]);
+        c = (Capture){0};
+        s = Parse(line, &c);
+        CHECK(s.invalidLines == 1 && s.redirectLines == 0 && s.acceptedNames == 0);
+    }
     c = (Capture){0};
     s = Parse("0.0.0.0 LOCALHOST. a.localhost a.b.localhost localhost.localdomain "
               "ip6-localhost ip6-loopback broadcasthost ip6-allnodes ip6-allrouters "

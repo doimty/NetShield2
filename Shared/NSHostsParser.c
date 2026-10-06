@@ -1,5 +1,5 @@
 #include "NSHostsParser.h"
-#include <arpa/inet.h>
+#include "NSStrictAddress.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -63,11 +63,11 @@ static int AddressKind(const unsigned char *bytes, size_t length) {
     }
     memcpy(text, bytes, length);
     text[length] = '\0';
-    if (inet_pton(AF_INET, text, address) == 1) {
+    if (NSStrictInetPton(AF_INET, text, address) == 1) {
         return (address[0] == 0 && address[1] == 0 && address[2] == 0 && address[3] == 0) ||
                (address[0] == 127 && address[1] == 0 && address[2] == 0 && address[3] == 1);
     }
-    if (inet_pton(AF_INET6, text, address) == 1) {
+    if (NSStrictInetPton(AF_INET6, text, address) == 1) {
         for (size_t i = 0; i < 15; i++) {
             if (address[i] != 0) {
                 return 0;

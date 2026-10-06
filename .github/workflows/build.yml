@@ -43,6 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           git clone "https://github.com/$THEOS_REPOSITORY.git" "$THEOS"
+          git -C "$THEOS" fetch --depth 1 origin "$THEOS_REVISION"
           git -C "$THEOS" checkout "$THEOS_REVISION"
           git -C "$THEOS" submodule update --init --recursive
           curl --fail --location --retry 3 \

@@ -8,7 +8,7 @@ on:
         default: roothide
         options: [roothide, rootless]
   push:
-    branches: [main]
+    branches: [main, feat/hosts-import]
   pull_request:
 
 permissions:
@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scheme: ${{ fromJSON(github.event_name == 'workflow_dispatch' && (inputs.scheme == 'rootless' && '["rootless"]' || '["roothide"]') || '["rootless","roothide"]') }}
+        scheme: ${{ fromJSON(github.event_name == 'workflow_dispatch' && (inputs.scheme == 'rootless' && '["rootless"]' || '["roothide"]') || (github.ref == 'refs/heads/feat/hosts-import' && '["roothide"]' || '["rootless","roothide"]')) }}
     env:
       THEOS_REPOSITORY: ${{ matrix.scheme == 'roothide' && 'roothide/theos' || 'theos/theos' }}
       THEOS_REVISION: ${{ matrix.scheme == 'roothide' && '88506b2c22e9e07dd4ed055f23c9e398a117a2c7' || 'dd5c14bb9d91311e221d51b5bfb8c9e5948156db' }}

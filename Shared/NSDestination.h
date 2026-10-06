@@ -1,3 +1,4 @@
+#import "NSLocalization.h"
 #import <Foundation/Foundation.h>
 #import <CoreFoundation/CoreFoundation.h>
 
@@ -38,18 +39,18 @@ static inline NSString *NSDestinationSummary(NSDictionary *destination) {
     NSString *address = NSCleanDestinationHost(destination[@"address"]);
     NSMutableArray *parts = [NSMutableArray new];
     if (domain.length) {
-        [parts addObject:[@"Domain: " stringByAppendingString:domain]];
+        [parts addObject:[NSL(@"Domain: ") stringByAppendingString:domain]];
     }
     if (address.length) {
         [parts addObject:[@"IP: " stringByAppendingString:address]];
     }
     NSNumber *localPort = destination[@"localPort"];
     if (localPort.integerValue >= 1 && localPort.integerValue <= 65535) {
-        [parts addObject:[NSString stringWithFormat:@"Local port: %@", localPort]];
+        [parts addObject:[NSString stringWithFormat:NSL(@"Local port: %@"), localPort]];
     }
     NSNumber *port = destination[@"port"];
     if (port.integerValue >= 1 && port.integerValue <= 65535) {
-        [parts addObject:[NSString stringWithFormat:@"Remote port: %@", port]];
+        [parts addObject:[NSString stringWithFormat:NSL(@"Remote port: %@"), port]];
     }
-    return parts.count ? [parts componentsJoinedByString:@" / "] : @"Destination unavailable from iOS";
+    return parts.count ? [parts componentsJoinedByString:@" / "] : NSL(@"Destination unavailable from iOS");
 }

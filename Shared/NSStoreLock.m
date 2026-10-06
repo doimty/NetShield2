@@ -1,3 +1,4 @@
+#import "NSLocalization.h"
 #import "NSStoreLock.h"
 #include <errno.h>
 #include <fcntl.h>
@@ -21,12 +22,13 @@
     if (lock->_descriptor < 0 || flock(lock->_descriptor, LOCK_EX | LOCK_NB) != 0) {
         int code = errno;
         if (error) {
-            *error = [NSError errorWithDomain:NSPOSIXErrorDomain
-                                         code:code
-                                     userInfo:@{
-                                         NSLocalizedDescriptionKey :
-                                             @"Shared state is busy or unavailable. Try again shortly."
-                                     }];
+            *error =
+                [NSError errorWithDomain:NSPOSIXErrorDomain
+                                    code:code
+                                userInfo:@{
+                                    NSLocalizedDescriptionKey :
+                                        NSL(@"Shared state is busy or unavailable. Try again shortly.")
+                                }];
         }
         return nil;
     }

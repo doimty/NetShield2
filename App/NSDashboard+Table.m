@@ -1,5 +1,7 @@
+#import "../Shared/NSLocalization.h"
 #import "NSDashboard+Internal.h"
 #import "../Shared/NSActivity.h"
+#import "NSHostsImportController.h"
 
 @implementation NSDashboard (Table)
 - (BOOL)showsSystemRules {
@@ -129,7 +131,7 @@
         return MAX((NSUInteger)1, self.globalRuleKeys.count);
     }
     if (section == NSDashboardSectionAdvanced) {
-        return 6;
+        return 7;
     }
     if (section == NSDashboardSectionSupport) {
         return 2;
@@ -141,41 +143,41 @@
         return nil;
     }
     return @[
-        @"Firewall", @"Waiting for your decision", @"Notifications", @"Advanced Settings", @"Support",
-        @"Global rules", @"App Rules", @"System Rules", @"Recent activity"
+        NSL(@"Firewall"), NSL(@"Waiting for your decision"), NSL(@"Notifications"), NSL(@"Advanced Settings"),
+        NSL(@"Support"), NSL(@"Global rules"), NSL(@"App Rules"), NSL(@"System Rules"),
+        NSL(@"Recent activity")
     ][section];
 }
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
     if (section == NSDashboardSectionSystemRules) {
-        return [self showsSystemRules] ? @"Tap a system identity to change its rule." : nil;
+        return [self showsSystemRules] ? NSL(@"Tap a system identity to change its rule.") : nil;
     }
     if (section == NSDashboardSectionGlobalRules) {
-        return @"Overrides app rules and the iOS system traffic allowance.";
+        return NSL(@"Overrides app rules and the iOS system traffic allowance.");
     }
     if (section == NSDashboardSectionFirewall) {
-        return @"Rules are saved when firewall is turned off.";
+        return NSL(@"Rules are saved when firewall is turned off.");
     }
     if (section == NSDashboardSectionRequests) {
-        return [NSString
-            stringWithFormat:
-                @"The latest %d expired requests stay available. During this filter session: %@ connections "
-                @"rejected at queue capacity; %@ older requests removed. ",
-                NSMaximumRequestHistory, self.monitor[@"overflowCount"] ?: @0,
-                self.monitor[@"evictedRequestCount"] ?: @0];
+        return [NSString stringWithFormat:NSL(@"The latest %d expired requests stay available. During this "
+                                              @"filter session: %@ connections "
+                                              @"rejected at queue capacity; %@ older requests removed. "),
+                                          NSMaximumRequestHistory, self.monitor[@"overflowCount"] ?: @0,
+                                          self.monitor[@"evictedRequestCount"] ?: @0];
     }
     if (section == NSDashboardSectionRules) {
-        return @"Tap an app identity to change its rule.";
+        return NSL(@"Tap an app identity to change its rule.");
     }
     if (section == NSDashboardSectionNotifications) {
-        return @"Tap Notification Settings to customize.";
+        return NSL(@"Tap Notification Settings to customize.");
     }
     if (section == NSDashboardSectionActivity) {
-        return @"Up to 300 recorded events";
+        return NSL(@"Up to 300 recorded events");
     }
     if (section == NSDashboardSectionSupport) {
-        return @"Developed by EolnMsuk.";
+        return NSL(@"Developed by EolnMsuk.");
     }
-    return @"NetShield2 2.2.8 / iOS 15-18.";
+    return @"NetShield2 2.2.8-1+hosts2 / iOS 15-18.";
 }
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
     return section == NSDashboardSectionSystemRules && ![self showsSystemRules]
@@ -215,15 +217,15 @@
     cell.detailTextLabel.numberOfLines = 0;
     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     if (path.section == NSDashboardSectionFirewall && path.row == 0) {
-        cell.textLabel.text = @"Firewall";
-        cell.detailTextLabel.text = @"Control internet access for your apps";
+        cell.textLabel.text = NSL(@"Firewall");
+        cell.detailTextLabel.text = NSL(@"Control internet access for your apps");
         cell.imageView.image = [UIImage systemImageNamed:@"shield.lefthalf.filled"];
         UISwitch *toggle = [UISwitch new];
         if (self.loaded && NEFilterManager.sharedManager.enabled) {
             [toggle setOn:YES animated:NO];
         }
         toggle.enabled = self.loaded && !self.busy;
-        toggle.accessibilityLabel = @"Firewall";
+        toggle.accessibilityLabel = NSL(@"Firewall");
         [toggle addTarget:self
                       action:@selector(firewallChanged:)
             forControlEvents:UIControlEventValueChanged];
@@ -234,35 +236,36 @@
         BOOL healthy =
             enabled && self.policy && [self hasFreshMonitor] && ![self.monitor[@"policyError"] length];
         if (self.busy) {
-            cell.textLabel.text = @"Updating...";
+            cell.textLabel.text = NSL(@"Updating...");
         } else if (!self.loaded) {
-            cell.textLabel.text = @"Unable to read firewall status";
+            cell.textLabel.text = NSL(@"Unable to read firewall status");
         } else if (!enabled) {
-            cell.textLabel.text = @"Off";
+            cell.textLabel.text = NSL(@"Off");
         } else {
-            cell.textLabel.text = healthy ? @"Active" : @"Needs attention";
+            cell.textLabel.text = healthy ? NSL(@"Active") : NSL(@"Needs attention");
         }
         cell.textLabel.textColor = healthy ? UIColor.systemGreenColor : UIColor.labelColor;
         NSString *detail =
-            @"The filter has not reported a healthy status. Turn Firewall off and on if this continues.";
+            NSL(@"The filter has not reported a healthy status. Turn Firewall off and on if this continues.");
         if (!enabled) {
-            detail = @"Turn on Firewall to apply your rules.";
+            detail = NSL(@"Turn on Firewall to apply your rules.");
         } else if (healthy) {
             detail = NEFilterManager.sharedManager.providerConfiguration.filterSockets
-                         ? @"Browser and socket filtering active."
-                         : @"Browser filtering only. Enable Filter System Sockets below Firewall for "
-                           @"other app connections.";
+                         ? NSL(@"Browser and socket filtering active.")
+                         : NSL(@"Browser filtering only. Enable Filter System Sockets below Firewall for "
+                               @"other app connections.");
         }
         if (enabled && NEFilterManager.sharedManager.providerConfiguration.filterSockets !=
                            [self.policy.document[@"filterSockets"] boolValue]) {
-            detail = [detail stringByAppendingString:
-                                 @" Pending: toggle Firewall off and on to apply the saved socket setting."];
+            detail =
+                [detail stringByAppendingString:
+                            NSL(@" Pending: toggle Firewall off and on to apply the saved socket setting.")];
         }
         if ([self.monitor[@"policyError"] length]) {
-            detail = self.monitor[@"policyError"];
+            detail = NSL(self.monitor[@"policyError"]);
         }
         if ([self.monitor[@"dnsIssue"] length]) {
-            detail = [detail stringByAppendingFormat:@"\n%@", self.monitor[@"dnsIssue"]];
+            detail = [detail stringByAppendingFormat:@"\n%@", NSL(self.monitor[@"dnsIssue"])];
         }
         if (self.policyReadError.length) {
             detail = self.policyReadError;
@@ -272,8 +275,8 @@
         cell.accessoryType = UITableViewCellAccessoryNone;
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
     } else if (path.section == NSDashboardSectionFirewall && path.row == 2) {
-        cell.textLabel.text = @"Allow all iOS system traffic";
-        cell.detailTextLabel.text = @"Allow Apple identities unless a global rule matches";
+        cell.textLabel.text = NSL(@"Allow all iOS system traffic");
+        cell.detailTextLabel.text = NSL(@"Allow Apple identities unless a global rule matches");
         UISwitch *toggle = [UISwitch new];
         if ([self.policy.document[@"allowAppleSystemProcesses"] boolValue]) {
             [toggle setOn:YES animated:NO];
@@ -286,9 +289,9 @@
         cell.accessoryView = toggle;
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
     } else if (path.section == NSDashboardSectionFirewall && path.row == 1) {
-        cell.textLabel.text = @"Filter System Sockets";
+        cell.textLabel.text = NSL(@"Filter System Sockets");
         cell.detailTextLabel.text =
-            @"Required to filter all app network. Only disable if an app crashes on launch";
+            NSL(@"Required to filter all app network. Only disable if an app crashes on launch");
         UISwitch *toggle = [UISwitch new];
         toggle.on = [self.policy.document[@"filterSockets"] boolValue];
         toggle.enabled = self.policy != nil && self.loaded && !self.busy;
@@ -299,31 +302,31 @@
         cell.accessoryView = toggle;
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
     } else if (path.section == NSDashboardSectionFirewall) {
-        cell.textLabel.text = path.row == 5 ? @"Default Rule" : @"Unidentified";
+        cell.textLabel.text = path.row == 5 ? NSL(@"Default Rule") : NSL(@"Unidentified");
         cell.detailTextLabel.text =
             self.policy ? [self ruleTitle:self.policy.document[path.row == 5 ? @"default" : @"unattributed"]]
-                        : @"Policy unavailable";
+                        : NSL(@"Policy unavailable");
         if (!self.policy) {
             cell.accessoryType = UITableViewCellAccessoryNone;
         }
     } else if (path.section == NSDashboardSectionRequests) {
         NSArray *requests = self.monitor[@"requests"];
         if (!requests.count) {
-            cell.textLabel.text = @"No apps waiting";
+            cell.textLabel.text = NSL(@"No apps waiting");
             cell.accessoryType = UITableViewCellAccessoryNone;
         } else {
             NSDictionary *request = requests[path.row];
             cell.textLabel.text = request[@"identity"];
             cell.detailTextLabel.text = [request[@"expired"] boolValue]
-                                            ? @"Blocked while waiting. Tap to decide."
-                                            : @"Tap to allow or keep blocking";
+                                            ? NSL(@"Blocked while waiting. Tap to decide.")
+                                            : NSL(@"Tap to allow or keep blocking");
             cell.detailTextLabel.text = [cell.detailTextLabel.text
-                stringByAppendingFormat:@"\nFirst requested peer: %@",
+                stringByAppendingFormat:NSL(@"\nFirst requested peer: %@"),
                                         NSDestinationSummary(request[@"destination"])];
         }
     } else if (path.section == NSDashboardSectionGlobalRules) {
         if (!self.globalRuleKeys.count) {
-            cell.textLabel.text = @"No global rules";
+            cell.textLabel.text = NSL(@"No global rules");
             cell.accessoryType = UITableViewCellAccessoryNone;
         } else {
             NSString *key = self.globalRuleKeys[path.row];
@@ -343,8 +346,8 @@
         NSArray<NSString *> *identities = [self identitiesForSection:path.section];
         if (!identities.count) {
             cell.textLabel.text = path.section == NSDashboardSectionSystemRules
-                                      ? @"System processes appear here when they connect"
-                                      : @"Apps appear here when they connect";
+                                      ? NSL(@"System processes appear here when they connect")
+                                      : NSL(@"Apps appear here when they connect");
             cell.accessoryType = UITableViewCellAccessoryNone;
         } else {
             NSString *identity = identities[path.row];
@@ -360,35 +363,37 @@
             cell.textLabel.text = identity;
             cell.detailTextLabel.text =
                 [self.policy automaticallyAllowsIdentity:identity]
-                    ? [NSString stringWithFormat:
-                                    @"Allowed by iOS setting unless a global rule matches. Saved rule: %@",
-                                    [self ruleTitle:self.policy.document[@"rules"][identity]]]
+                    ? [NSString
+                          stringWithFormat:
+                              NSL(@"Allowed by iOS setting unless a global rule matches. Saved rule: %@"),
+                              [self ruleTitle:self.policy.document[@"rules"][identity]]]
                     : [self ruleTitle:self.policy.document[@"rules"][identity]];
             NSDictionary *destination = self.policy.document[@"ruleDestinations"][identity];
             if (destination) {
                 cell.detailTextLabel.text = [cell.detailTextLabel.text
-                    stringByAppendingFormat:@"\nFirst requested peer: %@ (rule applies to the app)",
+                    stringByAppendingFormat:NSL(@"\nFirst requested peer: %@ (rule applies to the app)"),
                                             NSDestinationSummary(destination)];
             }
         }
     } else if (path.section == NSDashboardSectionNotifications) {
-        cell.textLabel.text = path.row == 0 ? @"Notification Settings" : @"Banners & Do Not Disturb";
+        cell.textLabel.text =
+            path.row == 0 ? NSL(@"Notification Settings") : NSL(@"Banners & Do Not Disturb");
         cell.detailTextLabel.text =
-            path.row == 0 ? self.notificationStatus : @"How to answer while using another app";
+            path.row == 0 ? self.notificationStatus : NSL(@"How to answer while using another app");
         if (path.row == 0 && [self hasFreshMonitor] && [self.monitor[@"notificationDeliveryIssue"] length]) {
-            cell.detailTextLabel.text = self.monitor[@"notificationDeliveryIssue"];
+            cell.detailTextLabel.text = NSL(self.monitor[@"notificationDeliveryIssue"]);
         }
     } else if (path.section == NSDashboardSectionActivity) {
         NSArray *events = self.activityGroups;
         cell.accessoryType = UITableViewCellAccessoryNone;
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
         if (!events.count) {
-            cell.textLabel.text = @"No activity yet";
+            cell.textLabel.text = NSL(@"No activity yet");
         } else {
             NSDictionary *event = events[path.row];
             BOOL allowed = [event[@"action"] isEqual:@"allow"];
             BOOL blocked = [event[@"action"] isEqual:@"block"];
-            NSString *action = allowed ? @"Allowed" : blocked ? @"Blocked" : @"Connection";
+            NSString *action = allowed ? NSL(@"Allowed") : blocked ? NSL(@"Blocked") : NSL(@"Connection");
             UIColor *color = allowed ? UIColor.systemGreenColor : blocked ? UIColor.systemRedColor : nil;
             if (color) {
                 cell.backgroundColor = [color colorWithAlphaComponent:0.14];
@@ -399,37 +404,45 @@
             }
             cell.textLabel.text = [NSString
                 stringWithFormat:@"%@ / %@", action,
-                                 [event[@"identity"] length] ? event[@"identity"] : @"Unidentified app"];
+                                 [event[@"identity"] length] ? event[@"identity"] : NSL(@"Unidentified app")];
             NSString *time = [NSDateFormatter localizedStringFromDate:event[@"time"]
                                                             dateStyle:NSDateFormatterShortStyle
                                                             timeStyle:NSDateFormatterShortStyle];
+            NSString *direction = @{
+                @"inbound" : NSL(@"Incoming"),
+                @"outbound" : NSL(@"Outgoing"),
+                @"unknown" : NSL(@"Unknown direction")
+            }[event[@"direction"]]
+                                      ?: event[@"direction"];
             cell.detailTextLabel.text =
-                [NSString stringWithFormat:@"%@ / %@\nConnections: %@\nReceived %.1f MB / Sent %.1f MB", time,
-                                           event[@"direction"], event[@"connections"],
+                [NSString stringWithFormat:NSL(@"%@ / %@\nConnections: %@\nReceived %.1f MB / Sent %.1f MB"),
+                                           time, direction, event[@"connections"],
                                            [event[@"bytesIn"] unsignedLongLongValue] / 1000000.0,
                                            [event[@"bytesOut"] unsignedLongLongValue] / 1000000.0];
             cell.detailTextLabel.text = [cell.detailTextLabel.text
                 stringByAppendingFormat:@"\n%@", NSDestinationSummary(event[@"destination"])];
         }
     } else if (path.section == NSDashboardSectionSupport) {
-        cell.textLabel.text = path.row == 0 ? @"GitHub Link" : @"Support Developer";
+        cell.textLabel.text = path.row == 0 ? NSL(@"GitHub Link") : NSL(@"Support Developer");
         cell.detailTextLabel.text =
-            path.row == 0 ? @"Source code, releases and issues" : @"Choose Venmo or Bitcoin";
+            path.row == 0 ? NSL(@"Source code, releases and issues") : NSL(@"Choose Venmo or Bitcoin");
         cell.textLabel.textColor = UIColor.systemBlueColor;
     } else {
         cell.textLabel.text = @[
-            @"Add a rule by app identity", @"Add a rule by IP / Domain", @"Add a rule by port number",
-            @"Export Rules and Recent Activity", @"Reset Rules & History", @"Reset ALL Settings"
+            NSL(@"Add a rule by app identity"), NSL(@"Add a rule by IP / Domain"),
+            NSL(@"Add a rule by port number"), NSL(@"Export Rules and Recent Activity"),
+            NSL(@"Import Hosts Blocklist"), NSL(@"Reset Rules & History"), NSL(@"Reset ALL Settings")
         ][path.row];
         cell.detailTextLabel.text = @[
-            @"For an exact identity supplied by iOS", @"For an IP or domain across all processes",
-            @"For a port across all processes", @"Share rules and recent activity as a JSON file",
-            @"Reset rules and history only",
-            @"Removes all rules, permissions and filters. Runs automatically during uninstall."
+            NSL(@"For an exact identity supplied by iOS"), NSL(@"For an IP or domain across all processes"),
+            NSL(@"For a port across all processes"), NSL(@"Share rules and recent activity as a JSON file"),
+            NSL(@"Paste or choose a Hosts file; preview before adding blocking domains"),
+            NSL(@"Reset rules and history only"),
+            NSL(@"Removes all rules, permissions and filters. Runs automatically during uninstall.")
         ][path.row];
-        if (path.row == 3) {
+        if (path.row == 3 || path.row == 4) {
             cell.textLabel.textColor = UIColor.systemBlueColor;
-        } else if (path.row > 3) {
+        } else if (path.row > 4) {
             cell.textLabel.textColor = UIColor.systemRedColor;
         }
     }
@@ -481,28 +494,47 @@
             [self addGlobalRuleByPort:path.row == 2];
         } else if (path.row == 3) {
             [self exportRulesAndRecentActivityFromRow:path];
-        } else if (path.row < 6) {
-            BOOL reset = path.row == 4;
+        } else if (path.row == 4) {
+            if (!self.policy) {
+                return;
+            }
+            NSHostsImportController *importer = [NSHostsImportController new];
+            __weak typeof(self) weakSelf = self;
+            importer.didImport = ^(NSUInteger count) {
+                NSDashboard *dashboard = weakSelf;
+                dashboard.message =
+                    [NSString stringWithFormat:NSL(@"Imported %lu Hosts blocking rules for new connections. "
+                                                   @"Firewall and app defaults unchanged."),
+                                               (unsigned long)count];
+                [dashboard reloadMonitor];
+            };
+            UINavigationController *navigation =
+                [[UINavigationController alloc] initWithRootViewController:importer];
+            navigation.modalPresentationStyle = UIModalPresentationFullScreen;
+            [self presentViewController:navigation animated:YES completion:nil];
+        } else if (path.row < 7) {
+            BOOL reset = path.row == 5;
             UIAlertController *alert = [UIAlertController
-                alertControllerWithTitle:reset ? @"Reset Rules & History?" : @"Reset ALL Settings?"
-                                 message:reset ? @"Deletes app and global rules, pending requests and "
+                alertControllerWithTitle:reset ? NSL(@"Reset Rules & History?") : NSL(@"Reset ALL Settings?")
+                                 message:
+                                     reset ? NSL(@"Deletes app and global rules, pending requests and "
                                                  @"history only. "
                                                  @"Keeps your settings and restores the firewall's previous "
-                                                 @"on/off state after stopping it to reset."
-                                               : @"Removes all NetShield2 rules, permissions and history, "
+                                                 @"on/off state after stopping it to reset.")
+                                           : NSL(@"Removes all NetShield2 rules, permissions and history, "
                                                  @"restores default settings, and removes the system filter. "
                                                  @"Package-manager uninstall removes the filter "
                                                  @"automatically. iOS notification authorization "
-                                                 @"must be managed in Settings."
+                                                 @"must be managed in Settings.")
                           preferredStyle:UIAlertControllerStyleAlert];
-            [alert addAction:[UIAlertAction
-                                 actionWithTitle:reset ? @"Reset rules and history" : @"Reset all settings"
-                                           style:UIAlertActionStyleDestructive
-                                         handler:^(UIAlertAction *action) {
-                                             self.resetAllSettings = !reset;
-                                             [self resetNetShield2];
-                                         }]];
-            [alert addAction:[UIAlertAction actionWithTitle:@"Cancel"
+            [alert addAction:[UIAlertAction actionWithTitle:reset ? NSL(@"Reset rules and history")
+                                                                  : NSL(@"Reset all settings")
+                                                      style:UIAlertActionStyleDestructive
+                                                    handler:^(UIAlertAction *action) {
+                                                        self.resetAllSettings = !reset;
+                                                        [self resetNetShield2];
+                                                    }]];
+            [alert addAction:[UIAlertAction actionWithTitle:NSL(@"Cancel")
                                                       style:UIAlertActionStyleCancel
                                                     handler:nil]];
             [self presentViewController:alert animated:YES completion:nil];

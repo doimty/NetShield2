@@ -1,3 +1,4 @@
+#import "../Shared/NSLocalization.h"
 #import "NSDashboard+Internal.h"
 #import "../Shared/NSGlobalRule.h"
 #import "../Shared/NSExport.h"
@@ -129,19 +130,19 @@
     return NSHasCurrentControlHeartbeat(self.monitor, activation, NSDate.date);
 }
 - (void)showError:(NSError *)error {
-    [self showError:error operation:@"Policy/storage"];
+    [self showError:error operation:NSL(@"Policy/storage")];
 }
 - (void)exportRulesAndRecentActivityFromRow:(NSIndexPath *)path {
     NSError *error = nil;
     NSPolicy *policy = NSReadPolicy(&error);
     if (!policy) {
-        [self showError:error operation:@"Export"];
+        [self showError:error operation:NSL(@"Export")];
         return;
     }
     NSString *version = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"] ?: @"";
     NSData *data = NSRulesAndActivityJSON(policy, NSReadMonitor()[@"events"] ?: @[], version, &error);
     if (!data) {
-        [self showError:error operation:@"Export"];
+        [self showError:error operation:NSL(@"Export")];
         return;
     }
     NSURL *directory = [NSURL
@@ -152,13 +153,13 @@
             isDirectory:YES];
     NSFileManager *files = NSFileManager.defaultManager;
     if (![files createDirectoryAtURL:directory withIntermediateDirectories:YES attributes:nil error:&error]) {
-        [self showError:error operation:@"Export"];
+        [self showError:error operation:NSL(@"Export")];
         return;
     }
     NSURL *url = [directory URLByAppendingPathComponent:@"NetShield2-Rules-and-Recent-Activity.json"];
     if (![data writeToURL:url options:NSDataWritingAtomic error:&error]) {
         [files removeItemAtURL:directory error:NULL];
-        [self showError:error operation:@"Export"];
+        [self showError:error operation:NSL(@"Export")];
         return;
     }
     UIActivityViewController *share = [[UIActivityViewController alloc] initWithActivityItems:@[ url ]
@@ -171,14 +172,14 @@
             [files removeItemAtURL:directory error:NULL];
             if (activityError) {
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    [weakSelf showError:activityError operation:@"Export"];
+                    [weakSelf showError:activityError operation:NSL(@"Export")];
                 });
             }
         };
     [self presentViewController:share animated:YES completion:nil];
 }
 - (void)showError:(NSError *)error operation:(NSString *)operation {
-    self.message = [NSString stringWithFormat:@"%@: %@ (%@ %ld).", operation, error.localizedDescription,
+    self.message = [NSString stringWithFormat:NSL(@"%@: %@ (%@ %ld)."), operation, error.localizedDescription,
                                               error.domain, (long)error.code];
     [self refreshTableKeepingPosition];
 }
@@ -190,8 +191,9 @@
         return;
     }
     NSRemoveAutomaticallyAllowedNotifications();
-    self.message = @"Policy saved for new flows. Close existing connections and retry; admitted flows keep "
-                   @"their previous verdict.";
+    self.message =
+        NSL(@"Policy saved for new flows. Close existing connections and retry; admitted flows keep "
+            @"their previous verdict.");
     [self reloadMonitor];
 }
 - (void)chooseActionForIdentity:(NSString *)identity defaultKey:(NSString *)key {
@@ -199,17 +201,17 @@
         return;
     }
     NSString *title = identity;
-    NSString *explanation = @"Choose a rule for new connections.";
+    NSString *explanation = NSL(@"Choose a rule for new connections.");
     NSArray *actions = @[ @"allow", @"block-inbound", @"block-outbound", @"block", @"use-default" ];
     if ([key isEqual:@"default"]) {
-        title = @"Default Rule";
-        explanation = @"Choose what happens when an app without a saved rule connects. Ask me lets you "
-                      @"decide from a notification.";
+        title = NSL(@"Default Rule");
+        explanation = NSL(@"Choose what happens when an app without a saved rule connects. Ask me lets you "
+                          @"decide from a notification.");
         actions = @[ @"ask", @"allow", @"block" ];
     } else if ([key isEqual:@"unattributed"]) {
-        title = @"Unidentified";
-        explanation = @"These connections have no app identity from iOS. Allow is recommended to avoid "
-                      @"interrupting system services.";
+        title = NSL(@"Unidentified");
+        explanation = NSL(@"These connections have no app identity from iOS. Allow is recommended to avoid "
+                          @"interrupting system services.");
         actions = @[ @"allow", @"block" ];
     }
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:title
@@ -236,15 +238,17 @@
                                                     }];
                                                 }]];
     }
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:NSL(@"Cancel")
+                                              style:UIAlertActionStyleCancel
+                                            handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
 }
 - (NSString *)globalRuleTitle:(NSString *)key {
     NSRange colon = [key rangeOfString:@":"];
-    NSString *kind = [key hasPrefix:@"localPort:"] ? @"Local port"
-                     : [key hasPrefix:@"port:"]    ? @"Remote port"
+    NSString *kind = [key hasPrefix:@"localPort:"] ? NSL(@"Local port")
+                     : [key hasPrefix:@"port:"]    ? NSL(@"Remote port")
                      : [key hasPrefix:@"ip:"]      ? @"IP"
-                                                   : @"Domain";
+                                                   : NSL(@"Domain");
     return [NSString stringWithFormat:@"%@: %@", kind, [key substringFromIndex:colon.location + 1]];
 }
 - (void)chooseGlobalRule:(NSString *)key {
@@ -254,11 +258,11 @@
     if (!self.policy) {
         return;
     }
-    UIAlertController *alert =
-        [UIAlertController alertControllerWithTitle:[self globalRuleTitle:key]
-                                            message:@"Applies across all processes. Overrides app rules and "
-                                                    @"the iOS system traffic allowance."
-                                     preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertController *alert = [UIAlertController
+        alertControllerWithTitle:[self globalRuleTitle:key]
+                         message:NSL(@"Applies across all processes. Overrides app rules and "
+                                     @"the iOS system traffic allowance.")
+                  preferredStyle:UIAlertControllerStyleAlert];
     alert.view.tintColor = UIColor.systemBlueColor;
     NSMutableArray *actions =
         [(portCreation ? @[ @"allow", @"block" ]
@@ -268,8 +272,9 @@
     }
     for (NSString *action in actions) {
         [alert addAction:[UIAlertAction
-                             actionWithTitle:portCreation ? ([action isEqual:@"allow"] ? @"Allow" : @"Block")
-                                             : [action isEqual:@"remove"] ? @"Remove Rule"
+                             actionWithTitle:portCreation
+                                                 ? ([action isEqual:@"allow"] ? NSL(@"Allow") : NSL(@"Block"))
+                                             : [action isEqual:@"remove"] ? NSL(@"Remove Rule")
                                                                           : [self ruleTitle:action]
                                        style:[action isEqual:@"remove"] ? UIAlertActionStyleDestructive
                                                                         : [self ruleActionStyle:action]
@@ -289,7 +294,9 @@
                                          }];
                                      }]];
     }
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:NSL(@"Cancel")
+                                              style:UIAlertActionStyleCancel
+                                            handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
 }
 - (void)addGlobalRuleByPort:(BOOL)port {
@@ -301,21 +308,23 @@
         return;
     }
     UIAlertController *alert =
-        [UIAlertController alertControllerWithTitle:@"Add a rule by port number"
-                                            message:@"Choose which port to filter across all processes."
+        [UIAlertController alertControllerWithTitle:NSL(@"Add a rule by port number")
+                                            message:NSL(@"Choose which port to filter across all processes.")
                                      preferredStyle:UIAlertControllerStyleAlert];
     alert.view.tintColor = UIColor.systemBlueColor;
     for (NSNumber *local in @[ @YES, @NO ]) {
-        [alert addAction:[UIAlertAction actionWithTitle:local.boolValue ? @"Local Port" : @"Remote Port"
-                                                  style:UIAlertActionStyleDefault
-                                                handler:^(UIAlertAction *action) {
-                                                    dispatch_async(dispatch_get_main_queue(), ^{
-                                                        [self enterGlobalRuleByPort:YES
-                                                                              local:local.boolValue];
-                                                    });
-                                                }]];
+        [alert addAction:[UIAlertAction
+                             actionWithTitle:local.boolValue ? NSL(@"Local Port") : NSL(@"Remote Port")
+                                       style:UIAlertActionStyleDefault
+                                     handler:^(UIAlertAction *action) {
+                                         dispatch_async(dispatch_get_main_queue(), ^{
+                                             [self enterGlobalRuleByPort:YES local:local.boolValue];
+                                         });
+                                     }]];
     }
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:NSL(@"Cancel")
+                                              style:UIAlertActionStyleCancel
+                                            handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
 }
 - (void)enterGlobalRuleByPort:(BOOL)port local:(BOOL)local {
@@ -323,18 +332,19 @@
         return;
     }
     UIAlertController *alert = [UIAlertController
-        alertControllerWithTitle:port ? @"Add a rule by port number" : @"Add a rule by IP / Domain"
+        alertControllerWithTitle:port ? NSL(@"Add a rule by port number") : NSL(@"Add a rule by IP / Domain")
                          message:
                              port
-                                 ? (local
-                                        ? @"Enter a local port from 1 to 65535. Applies across all processes."
-                                        : @"Enter a remote port from 1 to 65535. Applies across all "
-                                          @"processes.")
-                                 : @"Enter an exact IPv4/IPv6 address or domain (without a URL or "
-                                   @"path). Domains get a www. prefix and match both bare and www names."
+                                 ? (local ? NSL(@"Enter a local port from 1 to 65535. Applies across all "
+                                                @"processes.")
+                                          : NSL(@"Enter a remote port from 1 to 65535. Applies across all "
+                                                @"processes."))
+                                 : NSL(@"Enter an exact IPv4/IPv6 address or domain (without a URL or "
+                                       @"path). Domains get a www. prefix and match both bare and www names.")
                   preferredStyle:UIAlertControllerStyleAlert];
     [alert addTextFieldWithConfigurationHandler:^(UITextField *field) {
-        field.placeholder = port ? (local ? @"Local port number" : @"Remote port number") : @"IP or domain";
+        field.placeholder =
+            port ? (local ? NSL(@"Local port number") : NSL(@"Remote port number")) : NSL(@"IP or domain");
         field.keyboardType = port ? UIKeyboardTypeNumberPad : UIKeyboardTypeASCIICapable;
         field.autocapitalizationType = UITextAutocapitalizationTypeNone;
         field.autocorrectionType = UITextAutocorrectionTypeNo;
@@ -342,7 +352,7 @@
     [alert
         addAction:
             [UIAlertAction
-                actionWithTitle:@"Choose Rule"
+                actionWithTitle:NSL(@"Choose Rule")
                           style:UIAlertActionStyleDefault
                         handler:^(UIAlertAction *action) {
                             NSString *value = alert.textFields.firstObject.text;
@@ -354,16 +364,17 @@
                                     [self chooseGlobalRule:key portCreation:port];
                                 } else {
                                     UIAlertController *invalid = [UIAlertController
-                                        alertControllerWithTitle:port ? @"Invalid port number"
-                                                                      : @"Invalid IP or domain"
-                                                         message:
-                                                             port ? @"Enter a whole number from 1 to 65535."
-                                                                  : @"Enter an IPv4/IPv6 address or an exact "
-                                                                    @"domain, such as example.com."
+                                        alertControllerWithTitle:port ? NSL(@"Invalid port number")
+                                                                      : NSL(@"Invalid IP or domain")
+                                                         message:port ? NSL(@"Enter a whole number from 1 to "
+                                                                            @"65535.")
+                                                                      : NSL(@"Enter an IPv4/IPv6 address or "
+                                                                            @"an exact "
+                                                                            @"domain, such as example.com.")
                                                   preferredStyle:UIAlertControllerStyleAlert];
                                     [invalid
                                         addAction:[UIAlertAction
-                                                      actionWithTitle:@"Try Again"
+                                                      actionWithTitle:NSL(@"Try Again")
                                                                 style:UIAlertActionStyleDefault
                                                               handler:^(UIAlertAction *selected) {
                                                                   dispatch_async(dispatch_get_main_queue(), ^{
@@ -371,29 +382,31 @@
                                                                                             local:local];
                                                                   });
                                                               }]];
-                                    [invalid addAction:[UIAlertAction actionWithTitle:@"Cancel"
+                                    [invalid addAction:[UIAlertAction actionWithTitle:NSL(@"Cancel")
                                                                                 style:UIAlertActionStyleCancel
                                                                               handler:nil]];
                                     [self presentViewController:invalid animated:YES completion:nil];
                                 }
                             });
                         }]];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:NSL(@"Cancel")
+                                              style:UIAlertActionStyleCancel
+                                            handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
 }
 - (void)addIdentity {
-    UIAlertController *alert =
-        [UIAlertController alertControllerWithTitle:@"Exact OS identity"
-                                            message:@"Prefer selecting an identity observed below. This "
-                                                    @"value is sourceAppIdentifier from Network Extension; "
-                                                    @"it may differ from the app's bundle identifier."
-                                     preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertController *alert = [UIAlertController
+        alertControllerWithTitle:NSL(@"Exact OS identity")
+                         message:NSL(@"Prefer selecting an identity observed below. This "
+                                     @"value is sourceAppIdentifier from Network Extension; "
+                                     @"it may differ from the app's bundle identifier.")
+                  preferredStyle:UIAlertControllerStyleAlert];
     [alert addTextFieldWithConfigurationHandler:^(UITextField *field) {
-        field.placeholder = @"Exact sourceAppIdentifier";
+        field.placeholder = NSL(@"Exact sourceAppIdentifier");
         field.autocapitalizationType = UITextAutocapitalizationTypeNone;
         field.autocorrectionType = UITextAutocorrectionTypeNo;
     }];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Choose rule"
+    [alert addAction:[UIAlertAction actionWithTitle:NSL(@"Choose rule")
                                               style:UIAlertActionStyleDefault
                                             handler:^(UIAlertAction *action) {
                                                 NSString *identity = alert.textFields.firstObject.text;
@@ -404,7 +417,9 @@
                                                     });
                                                 }
                                             }]];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:NSL(@"Cancel")
+                                              style:UIAlertActionStyleCancel
+                                            handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
 }
 - (UIAlertActionStyle)ruleActionStyle:(NSString *)rule {
@@ -413,14 +428,14 @@
 }
 - (NSString *)ruleTitle:(NSString *)rule {
     return @{
-        @"ask" : @"Ask Me",
-        @"allow" : @"Allow In & Out",
-        @"block" : @"Block In & Out",
-        @"block-inbound" : @"Block Incoming",
-        @"block-outbound" : @"Block Outgoing",
-        @"use-default" : @"Use Default Rule"
+        @"ask" : NSL(@"Ask Me"),
+        @"allow" : NSL(@"Allow In & Out"),
+        @"block" : NSL(@"Block In & Out"),
+        @"block-inbound" : NSL(@"Block Incoming"),
+        @"block-outbound" : NSL(@"Block Outgoing"),
+        @"use-default" : NSL(@"Use Default Rule")
     }[rule ?: @""]
-               ?: @"Use Default Rule";
+               ?: NSL(@"Use Default Rule");
 }
 - (void)firewallChanged:(UISwitch *)sender {
     if (self.busy) {
@@ -464,22 +479,23 @@
             return;
         }
         UIAlertController *notice = [UIAlertController
-            alertControllerWithTitle:@"Opening a link with Firewall enabled"
-                             message:
-                                 @"If the destination app or browser needs network permission, the link may "
-                                 @"not load and a banner may not appear. Return to NetShield2, choose Allow "
-                                 @"In & Out "
-                                 @"under Waiting for your decision, then open the link again. If you "
-                                 @"previously blocked that app, change its rule under App rules."
+            alertControllerWithTitle:NSL(@"Opening a link with Firewall enabled")
+                             message:NSL(@"If the destination app or browser needs network permission, the "
+                                         @"link may "
+                                         @"not load and a banner may not appear. Return to NetShield2, "
+                                         @"choose Allow "
+                                         @"In & Out "
+                                         @"under Waiting for your decision, then open the link again. If you "
+                                         @"previously blocked that app, change its rule under App rules.")
                       preferredStyle:UIAlertControllerStyleAlert];
-        [notice addAction:[UIAlertAction actionWithTitle:@"Open link"
+        [notice addAction:[UIAlertAction actionWithTitle:NSL(@"Open link")
                                                    style:UIAlertActionStyleDefault
                                                  handler:^(UIAlertAction *action) {
                                                      [UIApplication.sharedApplication openURL:url
                                                                                       options:@{}
                                                                             completionHandler:nil];
                                                  }]];
-        [notice addAction:[UIAlertAction actionWithTitle:@"Cancel"
+        [notice addAction:[UIAlertAction actionWithTitle:NSL(@"Cancel")
                                                    style:UIAlertActionStyleCancel
                                                  handler:nil]];
         [self presentViewController:notice animated:YES completion:nil];
@@ -492,8 +508,8 @@
 }
 - (void)supportDeveloper {
     UIAlertController *alert = [UIAlertController
-        alertControllerWithTitle:@"Support Developer"
-                         message:@"Thank you for supporting EolnMsuk. Choose a donation method."
+        alertControllerWithTitle:NSL(@"Support Developer")
+                         message:NSL(@"Thank you for supporting EolnMsuk. Choose a donation method.")
                   preferredStyle:UIAlertControllerStyleAlert];
     [alert
         addAction:[UIAlertAction
@@ -503,43 +519,45 @@
                                   [self openSupportURL:[NSURL
                                                            URLWithString:@"https://venmo.com/u/rustonrails"]];
                               }]];
-    [alert addAction:[UIAlertAction
-                         actionWithTitle:@"Bitcoin"
-                                   style:UIAlertActionStyleDefault
-                                 handler:^(UIAlertAction *action) {
-                                     UIPasteboard.generalPasteboard.string =
-                                         @"31uHLpioo1TbxAmo9kM7rrKcLz3wvcoZaL";
-                                     dispatch_async(dispatch_get_main_queue(), ^{
-                                         UIAlertController *confirmation = [UIAlertController
-                                             alertControllerWithTitle:@"Bitcoin address copied"
-                                                              message:@"The Bitcoin wallet address has been "
-                                                                      @"copied to your clipboard."
-                                                       preferredStyle:UIAlertControllerStyleAlert];
-                                         [confirmation addAction:[UIAlertAction
-                                                                     actionWithTitle:@"OK"
-                                                                               style:UIAlertActionStyleDefault
-                                                                             handler:nil]];
-                                         [self presentViewController:confirmation
-                                                            animated:YES
-                                                          completion:nil];
-                                     });
-                                 }]];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
+    [alert
+        addAction:[UIAlertAction
+                      actionWithTitle:NSL(@"Bitcoin")
+                                style:UIAlertActionStyleDefault
+                              handler:^(UIAlertAction *action) {
+                                  UIPasteboard.generalPasteboard.string =
+                                      @"31uHLpioo1TbxAmo9kM7rrKcLz3wvcoZaL";
+                                  dispatch_async(dispatch_get_main_queue(), ^{
+                                      UIAlertController *confirmation = [UIAlertController
+                                          alertControllerWithTitle:NSL(@"Bitcoin address copied")
+                                                           message:NSL(@"The Bitcoin wallet address has been "
+                                                                       @"copied to your clipboard.")
+                                                    preferredStyle:UIAlertControllerStyleAlert];
+                                      [confirmation
+                                          addAction:[UIAlertAction actionWithTitle:NSL(@"OK")
+                                                                             style:UIAlertActionStyleDefault
+                                                                           handler:nil]];
+                                      [self presentViewController:confirmation animated:YES completion:nil];
+                                  });
+                              }]];
+    [alert addAction:[UIAlertAction actionWithTitle:NSL(@"Cancel")
+                                              style:UIAlertActionStyleCancel
+                                            handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
 }
 - (void)showNotificationHelp {
     UIAlertController *alert = [UIAlertController
-        alertControllerWithTitle:@"Answer without leaving your app"
-                         message:@"Touch and hold a NetShield2 notification, then choose Allow In & Out, "
+        alertControllerWithTitle:NSL(@"Answer without leaving your app")
+                         message:
+                             NSL(@"Touch and hold a NetShield2 notification, then choose Allow In & Out, "
                                  @"Block Incoming, or Keep Blocking. Tapping the notification body opens "
                                  @"NetShield2.\n\nUsing "
                                  @"Do Not "
                                  @"Disturb? In Settings > Focus > Do Not Disturb > Apps, allow notifications "
                                  @"from NetShield2. Do the same for any other Focus you use.\n\nUnanswered "
                                  @"requests are blocked after 30 seconds. You can allow them later and retry "
-                                 @"the connection."
+                                 @"the connection.")
                   preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"Done" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:NSL(@"Done") style:UIAlertActionStyleCancel handler:nil]];
     [self presentViewController:alert animated:YES completion:nil];
 }
 @end

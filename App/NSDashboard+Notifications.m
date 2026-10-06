@@ -1,3 +1,4 @@
+#import "../Shared/NSLocalization.h"
 #import "NSDashboard+Internal.h"
 
 @implementation NSDashboard (Notifications)
@@ -8,8 +9,8 @@
                 self.notificationStatus =
                     settings.authorizationStatus == UNAuthorizationStatusAuthorized &&
                             settings.alertSetting == UNNotificationSettingEnabled
-                        ? @"Banners enabled. Tap to change notification settings."
-                        : @"Enable notifications and banners to answer requests in other apps.";
+                        ? NSL(@"Banners enabled. Tap to change notification settings.")
+                        : NSL(@"Enable notifications and banners to answer requests in other apps.");
                 [self refreshTableKeepingPosition];
             });
         }];
@@ -22,10 +23,10 @@
                           dispatch_async(dispatch_get_main_queue(), ^{
                               [self refreshNotificationSettings];
                               if (error) {
-                                  [self showError:error operation:@"Notification authorization"];
+                                  [self showError:error operation:NSL(@"Notification authorization")];
                               } else if (!granted) {
-                                  self.message = @"Notifications are off. Enable Allow Notifications and "
-                                                 @"Banners in notification settings.";
+                                  self.message = NSL(@"Notifications are off. Enable Allow Notifications and "
+                                                     @"Banners in notification settings.");
                               }
                               NSWriteDocument(@{@"revision" : NSUUID.UUID.UUIDString},
                                               NSNotificationRetryFile, NULL);
@@ -63,10 +64,11 @@
         [self showError:error];
     } else {
         NSDictionary *destination = NSReadPolicy(NULL).document[@"ruleDestinations"][request[@"identity"]];
-        self.message = [NSString
-            stringWithFormat:@"Rule saved for %@. First requested peer: %@. Applies to all connections from "
-                             @"this app. Retry the app if its connection timed out.",
-                             request[@"identity"], NSDestinationSummary(destination)];
+        self.message =
+            [NSString stringWithFormat:
+                          NSL(@"Rule saved for %@. First requested peer: %@. Applies to all connections from "
+                              @"this app. Retry the app if its connection timed out."),
+                          request[@"identity"], NSDestinationSummary(destination)];
     }
     [self reloadMonitor];
 }
@@ -76,12 +78,12 @@
         return;
     }
     [self.deferredRequests addObject:request[@"token"]];
-    NSString *message =
-        [NSString stringWithFormat:
-                      @"%@\nFirst requested peer: %@\nCountry: unavailable\n\nUnanswered "
-                      @"connections are blocked after 30 seconds; retry the app if it has already timed out.",
-                      request[@"identity"], NSDestinationSummary(request[@"destination"])];
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Allow network access?"
+    NSString *message = [NSString
+        stringWithFormat:
+            NSL(@"%@\nFirst requested peer: %@\nCountry: unavailable\n\nUnanswered "
+                @"connections are blocked after 30 seconds; retry the app if it has already timed out."),
+            request[@"identity"], NSDestinationSummary(request[@"destination"])];
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:NSL(@"Allow network access?")
                                                                    message:message
                                                             preferredStyle:UIAlertControllerStyleAlert];
     for (NSString *rule in @[ @"allow", @"block-inbound", @"block-outbound", @"block" ]) {
@@ -91,7 +93,9 @@
                                                     [self answerRequest:request rule:rule];
                                                 }]];
     }
-    [alert addAction:[UIAlertAction actionWithTitle:@"Not Now" style:UIAlertActionStyleCancel handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:NSL(@"Not Now")
+                                              style:UIAlertActionStyleCancel
+                                            handler:nil]];
     self.permissionAlert = alert;
     self.presentedRequest = request;
     [self presentViewController:alert animated:YES completion:nil];

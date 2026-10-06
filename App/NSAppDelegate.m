@@ -1,3 +1,4 @@
+#import "../Shared/NSLocalization.h"
 #import "NSAppDelegate.h"
 #import "NSDashboard.h"
 #import "../Shared/NSNotifications.h"
@@ -51,8 +52,9 @@
                 BOOL saved = NSAnswerPermissionRequestWithRule(request, rule, &error);
                 if (!saved && ![NSReadPolicy(NULL) automaticallyAllowsIdentity:request[@"identity"]]) {
                     UNMutableNotificationContent *failure = [UNMutableNotificationContent new];
-                    failure.title = @"NetShield2 decision not saved";
-                    failure.body = error.localizedDescription ?: @"Open NetShield2 to review the request.";
+                    failure.title = NSL(@"NetShield2 decision not saved");
+                    failure.body =
+                        error.localizedDescription ?: NSL(@"Open NetShield2 to review the request.");
                     [center addNotificationRequest:[UNNotificationRequest
                                                        requestWithIdentifier:@"netshield-action-error"
                                                                      content:failure

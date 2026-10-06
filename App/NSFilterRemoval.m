@@ -1,3 +1,4 @@
+#import "../Shared/NSLocalization.h"
 #import "NSFilterRemoval.h"
 
 void NSRemoveInstalledFilter(id<NSFilterRemovalManager> manager, void (^completion)(NSError *)) {
@@ -22,8 +23,8 @@ void NSRemoveInstalledFilter(id<NSFilterRemovalManager> manager, void (^completi
                     completion([NSError errorWithDomain:@"NetShield2.Uninstall"
                                                    code:1
                                                userInfo:@{
-                                                   NSLocalizedDescriptionKey :
-                                                       @"The system filter still exists after removal."
+                                                   NSLocalizedDescriptionKey : NSL(
+                                                       @"The system filter still exists after removal.")
                                                }]);
                 } else {
                     completion(nil);

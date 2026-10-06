@@ -1,3 +1,4 @@
+#import "../Shared/NSLocalization.h"
 #import <NetworkExtension/NetworkExtension.h>
 #import "../Shared/NSStore.h"
 #import "../Shared/NSPermissionQueue.h"
@@ -62,8 +63,8 @@
         BOOL busy =
             [error.domain isEqual:NSPOSIXErrorDomain] && (error.code == EAGAIN || error.code == EWOULDBLOCK);
         self.nextDNSPublication = now + (busy ? 1 : 5);
-        self.dnsPublicationIssue =
-            [NSString stringWithFormat:@"DNS answers could not be saved: %@", error.localizedDescription];
+        self.dnsPublicationIssue = [NSString
+            stringWithFormat:NSL(@"DNS answers could not be saved: %@"), error.localizedDescription];
     }
 }
 - (NSDictionary *)snapshotWithRunning:(BOOL)running policyError:(NSError *)error {
@@ -113,7 +114,7 @@
                                                        error:&writeError];
         self.monitorIssue =
             published ? @""
-                      : [NSString stringWithFormat:@"Permission requests could not be published: %@",
+                      : [NSString stringWithFormat:NSL(@"Permission requests could not be published: %@"),
                                                    writeError.localizedDescription];
     }
 }
@@ -188,7 +189,7 @@
                             owner.pendingDNS[key] = entry;
                         } else {
                             owner.dnsIssues[key] =
-                                @"DNS publication backlog is full; answers will be retried.";
+                                NSL(@"DNS publication backlog is full; answers will be retried.");
                         }
                     }
                     [owner scheduleRefresh];

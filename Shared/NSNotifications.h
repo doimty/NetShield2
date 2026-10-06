@@ -1,3 +1,4 @@
+#import "NSLocalization.h"
 #import <UserNotifications/UserNotifications.h>
 #import "NSStore.h"
 
@@ -41,13 +42,13 @@ static inline void NSRemoveAutomaticallyAllowedNotifications(void) {
 static inline void NSRegisterPermissionActions(void) {
     UNNotificationActionOptions options = UNNotificationActionOptionAuthenticationRequired;
     UNNotificationAction *allow = [UNNotificationAction actionWithIdentifier:NSAllowAction
-                                                                       title:@"Allow In & Out"
+                                                                       title:NSL(@"Allow In & Out")
                                                                      options:options];
     UNNotificationAction *blockIncoming = [UNNotificationAction actionWithIdentifier:NSBlockIncomingAction
-                                                                               title:@"Block Incoming"
+                                                                               title:NSL(@"Block Incoming")
                                                                              options:options];
     UNNotificationAction *block = [UNNotificationAction actionWithIdentifier:NSBlockAction
-                                                                       title:@"Keep Blocking"
+                                                                       title:NSL(@"Keep Blocking")
                                                                      options:options];
     UNNotificationCategory *category =
         [UNNotificationCategory categoryWithIdentifier:NSPermissionCategory

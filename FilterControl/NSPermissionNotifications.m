@@ -1,3 +1,4 @@
+#import "../Shared/NSLocalization.h"
 #import "NSPermissionNotifications.h"
 #import "../Shared/NSNotifications.h"
 #import "../Shared/NSNotificationPolicy.h"
@@ -137,7 +138,8 @@ static void NSWithdrawNotifications(id<NSPermissionNotificationCenter> center, N
     self.submissionIDs[token] = submission;
     UNMutableNotificationContent *content = [UNMutableNotificationContent new];
     content.title = identity;
-    content.body = @"Wants network access. Long-press this banner to allow, block incoming or keep blocking.";
+    content.body =
+        NSL(@"Wants network access. Long-press this banner to allow, block incoming or keep blocking.");
     content.categoryIdentifier = NSPermissionCategory;
     content.sound = UNNotificationSound.defaultSound;
     content.userInfo = @{@"token" : token, @"identity" : identity};
@@ -147,61 +149,62 @@ static void NSWithdrawNotifications(id<NSPermissionNotificationCenter> center, N
     id<NSPermissionNotificationCenter> center = self.center;
     __weak id<NSPermissionNotificationCenter> weakCenter = center;
     __weak typeof(self) weakSelf = self;
-    [center addNotificationRequest:notification
-             withCompletionHandler:^(NSError *error) {
-                 id<NSPermissionNotificationCenter> center = weakCenter;
-                 if (!center) {
-                     return;
-                 }
-                 NSPermissionNotifications *owner = weakSelf;
-                 if (!owner) {
+    [center
+        addNotificationRequest:notification
+         withCompletionHandler:^(NSError *error) {
+             id<NSPermissionNotificationCenter> center = weakCenter;
+             if (!center) {
+                 return;
+             }
+             NSPermissionNotifications *owner = weakSelf;
+             if (!owner) {
+                 NSWithdrawNotifications(center, @[ token ]);
+                 return;
+             }
+             @synchronized(owner) {
+                 [owner.submitting removeObject:token];
+                 if (![owner.submissionIDs[token] isEqual:submission]) {
                      NSWithdrawNotifications(center, @[ token ]);
                      return;
                  }
-                 @synchronized(owner) {
-                     [owner.submitting removeObject:token];
-                     if (![owner.submissionIDs[token] isEqual:submission]) {
-                         NSWithdrawNotifications(center, @[ token ]);
+                 if (NSShouldWithdrawPermissionNotification(NSReadPolicy(NULL), identity,
+                                                            [owner isCurrent:token])) {
+                     NSWithdrawNotifications(center, @[ token ]);
+                     return;
+                 }
+                 if (error) {
+                     owner.issues[token] =
+                         [NSString stringWithFormat:NSL(@"Notification delivery failed: %@. Reopen "
+                                                        @"notification settings, then return to retry."),
+                                                    error.localizedDescription];
+                     return;
+                 }
+                 [owner.submitted addObject:token];
+                 [owner.issues removeObjectForKey:token];
+             }
+             [center getNotificationSettingsWithCompletionHandler:^(UNNotificationSettings *settings) {
+                 NSPermissionNotifications *current = weakSelf;
+                 if (!current) {
+                     return;
+                 }
+                 @synchronized(current) {
+                     if (![current.submissionIDs[token] isEqual:submission]) {
                          return;
                      }
                      if (NSShouldWithdrawPermissionNotification(NSReadPolicy(NULL), identity,
-                                                                [owner isCurrent:token])) {
-                         NSWithdrawNotifications(center, @[ token ]);
+                                                                [current isCurrent:token])) {
                          return;
                      }
-                     if (error) {
-                         owner.issues[token] =
-                             [NSString stringWithFormat:@"Notification delivery failed: %@. Reopen "
-                                                        @"notification settings, then return to retry.",
-                                                        error.localizedDescription];
-                         return;
+                     if (settings.authorizationStatus == UNAuthorizationStatusDenied ||
+                         settings.authorizationStatus == UNAuthorizationStatusNotDetermined ||
+                         settings.alertSetting == UNNotificationSettingDisabled) {
+                         current.issues[token] = NSL(
+                             @"iOS is not allowing alerts from the filter provider. Enable Allow "
+                             @"Notifications and Banners in Notification settings, then return to retry.");
                      }
-                     [owner.submitted addObject:token];
-                     [owner.issues removeObjectForKey:token];
                  }
-                 [center getNotificationSettingsWithCompletionHandler:^(UNNotificationSettings *settings) {
-                     NSPermissionNotifications *current = weakSelf;
-                     if (!current) {
-                         return;
-                     }
-                     @synchronized(current) {
-                         if (![current.submissionIDs[token] isEqual:submission]) {
-                             return;
-                         }
-                         if (NSShouldWithdrawPermissionNotification(NSReadPolicy(NULL), identity,
-                                                                    [current isCurrent:token])) {
-                             return;
-                         }
-                         if (settings.authorizationStatus == UNAuthorizationStatusDenied ||
-                             settings.authorizationStatus == UNAuthorizationStatusNotDetermined ||
-                             settings.alertSetting == UNNotificationSettingDisabled) {
-                             current.issues[token] =
-                                 @"iOS is not allowing alerts from the filter provider. Enable Allow "
-                                 @"Notifications and Banners in Notification settings, then return to retry.";
-                         }
-                     }
-                 }];
              }];
+         }];
 }
 - (void)stop {
     @synchronized(self) {

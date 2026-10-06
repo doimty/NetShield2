@@ -1,3 +1,4 @@
+#import "NSLocalization.h"
 #import "NSStore.h"
 #import "NSDestination.h"
 #import "NSPolicyCache.h"
@@ -30,8 +31,9 @@ NSDictionary *NSReadDocument(NSString *name, NSError **error) {
     NSURL *url = NSSharedURL(name);
     if (!url) {
         if (error) {
-            *error = NSStorageError(@"The shared app-group container is unavailable. Check entitlements and "
-                                    @"app/extension registration; filtering is not verified.");
+            *error =
+                NSStorageError(NSL(@"The shared app-group container is unavailable. Check entitlements and "
+                                   @"app/extension registration; filtering is not verified."));
         }
         return nil;
     }
@@ -41,7 +43,7 @@ NSDictionary *NSReadDocument(NSString *name, NSError **error) {
     }
     if ([attributes fileSize] > NSMaximumDocumentBytes) {
         if (error) {
-            *error = NSStorageError(@"Shared document exceeds the 2 MiB limit.");
+            *error = NSStorageError(NSL(@"Shared document exceeds the 2 MiB limit."));
         }
         return nil;
     }
@@ -55,7 +57,7 @@ NSDictionary *NSReadDocument(NSString *name, NSError **error) {
                                                            error:error];
     if (![value isKindOfClass:NSDictionary.class]) {
         if (error) {
-            *error = NSStorageError(@"Shared document is not a dictionary.");
+            *error = NSStorageError(NSL(@"Shared document is not a dictionary."));
         }
         return nil;
     }
@@ -65,7 +67,7 @@ BOOL NSWriteDocument(NSDictionary *document, NSString *name, NSError **error) {
     NSURL *url = NSSharedURL(name);
     if (!url) {
         if (error) {
-            *error = NSStorageError(@"The shared app-group container is unavailable.");
+            *error = NSStorageError(NSL(@"The shared app-group container is unavailable."));
         }
         return NO;
     }
@@ -78,7 +80,7 @@ BOOL NSWriteDocument(NSDictionary *document, NSString *name, NSError **error) {
     }
     if (data.length > NSMaximumDocumentBytes) {
         if (error) {
-            *error = NSStorageError(@"Shared document exceeds the 2 MiB limit.");
+            *error = NSStorageError(NSL(@"Shared document exceeds the 2 MiB limit."));
         }
         return NO;
     }
@@ -100,7 +102,7 @@ NSPolicy *NSReadPolicy(NSError **error) {
     if (!url) {
         NSInvalidatePolicyCache();
         if (error) {
-            *error = NSStorageError(@"The shared app-group container is unavailable.");
+            *error = NSStorageError(NSL(@"The shared app-group container is unavailable."));
         }
         return nil;
     }
@@ -110,7 +112,7 @@ static NSStoreLock *NSAcquireLock(NSString *name, NSError **error) {
     NSURL *url = NSSharedURL(name);
     if (!url) {
         if (error) {
-            *error = NSStorageError(@"The shared app-group container is unavailable.");
+            *error = NSStorageError(NSL(@"The shared app-group container is unavailable."));
         }
         return nil;
     }
@@ -193,7 +195,8 @@ BOOL NSUseDefaultRule(NSMutableDictionary *document, NSString *identity, NSError
     NSMutableDictionary *generations = [document[@"askGenerations"] mutableCopy] ?: [NSMutableDictionary new];
     if (!generations[identity] && generations.count >= NSMaximumRules) {
         if (error) {
-            *error = NSStorageError(@"The ask-again history is full. Reset Rules & History to clear it.");
+            *error =
+                NSStorageError(NSL(@"The ask-again history is full. Reset Rules & History to clear it."));
         }
         return NO;
     }
@@ -215,13 +218,14 @@ BOOL NSResetSharedStateWithOptions(BOOL legacyProviderMayBeRunning, BOOL preserv
         if ((legacyProviderMayBeRunning && (!monitor.count || [monitor[@"controlRunning"] boolValue])) ||
             ([monitor[@"controlRunning"] boolValue] && [monitor[@"engine"] integerValue] < 20014)) {
             if (error) {
-                *error = [NSError errorWithDomain:NSPOSIXErrorDomain
-                                             code:EBUSY
-                                         userInfo:@{
-                                             NSLocalizedDescriptionKey :
-                                                 @"The previous provider has not confirmed shutdown. Turn "
-                                                 @"Firewall on and off with this version, then retry reset."
-                                         }];
+                *error = [NSError
+                    errorWithDomain:NSPOSIXErrorDomain
+                               code:EBUSY
+                           userInfo:@{
+                               NSLocalizedDescriptionKey :
+                                   NSL(@"The previous provider has not confirmed shutdown. Turn "
+                                       @"Firewall on and off with this version, then retry reset.")
+                           }];
             }
             return NO;
         }
@@ -254,9 +258,9 @@ BOOL NSResetSharedStateWithOptions(BOOL legacyProviderMayBeRunning, BOOL preserv
                     !([removeError.domain isEqual:NSCocoaErrorDomain] &&
                       removeError.code == NSFileNoSuchFileError)) {
                     if (error) {
-                        *error = NSStorageError(
-                            [NSString stringWithFormat:@"Rules were reset, but history cleanup failed: %@",
-                                                       removeError.localizedDescription]);
+                        *error = NSStorageError([NSString
+                            stringWithFormat:NSL(@"Rules were reset, but history cleanup failed: %@"),
+                                             removeError.localizedDescription]);
                     }
                     return NO;
                 }
@@ -337,7 +341,7 @@ BOOL NSAnswerPermissionRequest(NSDictionary *request, BOOL allow, NSError **erro
 BOOL NSAnswerPermissionRequestWithRule(NSDictionary *request, NSString *rule, NSError **error) {
     if (![@[ @"allow", @"block", @"block-inbound", @"block-outbound" ] containsObject:rule ?: @""]) {
         if (error) {
-            *error = NSStorageError(@"Unsupported permission rule.");
+            *error = NSStorageError(NSL(@"Unsupported permission rule."));
         }
         return NO;
     }
@@ -380,8 +384,9 @@ NSDictionary *NSPermissionResponseDocument(NSDictionary *request, NSDictionary *
     }
     if (!current) {
         if (error) {
-            *error = NSStorageError(@"This request is no longer current or the filter is unavailable. Open "
-                                    @"NetShield2 to review it.");
+            *error =
+                NSStorageError(NSL(@"This request is no longer current or the filter is unavailable. Open "
+                                   @"NetShield2 to review it."));
         }
         return nil;
     }
@@ -390,15 +395,15 @@ NSDictionary *NSPermissionResponseDocument(NSDictionary *request, NSDictionary *
             ![(candidate[@"askGeneration"]
                    ?: @"") isEqual:(policy.document[@"askGenerations"][request[@"identity"]] ?: @"")]) {
             if (error) {
-                *error = NSStorageError(@"This request was replaced by Ask Again. Retry the app.");
+                *error = NSStorageError(NSL(@"This request was replaced by Ask Again. Retry the app."));
             }
             return nil;
         }
     }
     if (![policy requiresPermissionForIdentity:request[@"identity"]]) {
         if (error) {
-            *error =
-                NSStorageError(@"A rule already handles this app. Review its current rule in NetShield2.");
+            *error = NSStorageError(
+                NSL(@"A rule already handles this app. Review its current rule in NetShield2."));
         }
         return nil;
     }

@@ -6,6 +6,7 @@ import re
 import struct
 from urllib.parse import urlsplit
 from prepare_package import maintainer_script
+from check_localization_bundle import validate_localization_bundles
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
@@ -23,7 +24,7 @@ def plist(path):
 control = (ROOT / 'control').read_bytes()
 require(b'\r' not in control, 'control must have LF line endings')
 metadata = dict(line.split(': ', 1) for line in control.decode().splitlines() if ': ' in line)
-require(metadata['Version'] == '2.2.8', 'Wrong package version')
+require(metadata['Version'] == '2.2.8-1+hosts2', 'Wrong candidate package version')
 require(metadata['Name'] == 'NetShield2', 'Wrong product name')
 require(metadata['Architecture'] == 'iphoneos-arm64', 'Wrong rootless architecture')
 require(metadata['Depends'] == 'firmware (>= 15.0), firmware (<< 19.0), uikittools', 'Expected iOS 15-18 package range')
@@ -62,8 +63,9 @@ for directory, binary, suffix, point, principal in bundles:
     require(info['CFBundleIdentifier'] == 'com.eolnmsuk.netshield' + suffix, 'Bundle ID mismatch')
     require(info['CFBundleExecutable'] == binary, 'Executable mismatch')
     require(info['MinimumOSVersion'] == '15.0', 'Deployment mismatch')
-    require(info.get('CFBundleShortVersionString') == metadata['Version'],
-            f'{directory}: bundle release version must match the package version')
+    # Debian revision distinguishes the fork; Apple short versions remain numeric.
+    require(info.get('CFBundleShortVersionString') == metadata['Version'].split('-', 1)[0],
+            f'{directory}: bundle release version must match the package upstream version')
     require(info.get('CFBundleVersion') == engine_version,
             f'{directory}/Resources/Info.plist: CFBundleVersion is '
             f'{info.get("CFBundleVersion")!r}; expected "{engine_version}" for {metadata["Version"]}. '
@@ -89,6 +91,8 @@ for script in (ROOT / 'layout/DEBIAN').iterdir():
     require(raw.startswith(b'#!/bin/sh\n') and b'\r' not in raw, f'{script.name}: invalid shell line endings')
 for old in ('Sources', 'Preferences', 'NetShield.plist', 'NetShield2.plist', 'projectstructure.md'):
     require(not (ROOT / old).exists(), f'Obsolete v1 input remains: {old}')
+
+validate_localization_bundles(ROOT, args.stage, args.scheme)
 
 if args.stage:
     app_path = ('var/jb/' if args.scheme == 'rootless' else '') + 'Applications/NetShield2.app'

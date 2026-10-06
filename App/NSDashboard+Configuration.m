@@ -1,3 +1,4 @@
+#import "../Shared/NSLocalization.h"
 #import "NSDashboard+Internal.h"
 #include <errno.h>
 #import "../Shared/NSProviderHealth.h"
@@ -23,7 +24,7 @@
     if (NEFilterManager.sharedManager.enabled) {
         [self changeConfiguration:NSConfigurationEnable];
     } else {
-        self.message = @"Socket filtering preference saved. It applies when Firewall is enabled.";
+        self.message = NSL(@"Socket filtering preference saved. It applies when Firewall is enabled.");
         [self refreshTableKeepingPosition];
     }
 }
@@ -37,7 +38,7 @@
             self.busy = NO;
             self.loaded = error == nil;
             if (error) {
-                [self showError:error operation:@"Load filter configuration"];
+                [self showError:error operation:NSL(@"Load filter configuration")];
             }
             NEFilterManager *manager = NEFilterManager.sharedManager;
             NSInteger configuredEngine =
@@ -111,9 +112,9 @@
             self.restart = nil;
             self.busy = NO;
             if (error) {
-                [self showError:error operation:@"Enable/restart filter"];
+                [self showError:error operation:NSL(@"Enable/restart filter")];
             } else {
-                self.message = @"Filter configuration saved and control provider verified.";
+                self.message = NSL(@"Filter configuration saved and control provider verified.");
             }
             [self loadConfiguration];
         }];
@@ -123,17 +124,17 @@
         if (loadError) {
             self.busy = NO;
             self.loaded = NO;
-            [self showError:loadError operation:@"Load before configuration change"];
+            [self showError:loadError operation:NSL(@"Load before configuration change")];
             return;
         }
         void (^finished)(NSError *) = ^(NSError *error) {
             self.busy = NO;
             if (error) {
-                [self showError:error operation:@"Disable/remove filter"];
+                [self showError:error operation:NSL(@"Disable/remove filter")];
             } else {
                 self.message = operation == NSConfigurationRemove
-                                   ? @"System filter removed. You can now uninstall NetShield2."
-                                   : @"Firewall is off. Your rules are saved.";
+                                   ? NSL(@"System filter removed. You can now uninstall NetShield2.")
+                                   : NSL(@"Firewall is off. Your rules are saved.");
             }
             [self loadConfiguration];
         };
@@ -157,7 +158,7 @@
             return;
         }
         self.busy = NO;
-        [self showError:error operation:@"Reset shared state"];
+        [self showError:error operation:NSL(@"Reset shared state")];
         [self loadConfiguration];
         return;
     }
@@ -170,9 +171,10 @@
     self.identities = @[];
     self.loaded = YES;
     self.busy = NO;
-    self.message = self.resetAllSettings ? @"All NetShield2 settings, rules and history reset. System filter "
-                                           @"removed. iOS notification authorization is managed in Settings."
-                                         : @"Rules and history reset. Other settings kept.";
+    self.message = self.resetAllSettings
+                       ? NSL(@"All NetShield2 settings, rules and history reset. System filter "
+                             @"removed. iOS notification authorization is managed in Settings.")
+                       : NSL(@"Rules and history reset. Other settings kept.");
     if (self.resetAllSettings) {
         [NSUserDefaults.standardUserDefaults
             removePersistentDomainForName:NSBundle.mainBundle.bundleIdentifier];
@@ -190,15 +192,15 @@
         return;
     }
     self.busy = YES;
-    self.message = self.resetAllSettings ? @"Removing system filter before resetting all settings..."
-                                         : @"Stopping filtering before resetting rules and history...";
+    self.message = self.resetAllSettings ? NSL(@"Removing system filter before resetting all settings...")
+                                         : NSL(@"Stopping filtering before resetting rules and history...");
     [self refreshTableKeepingPosition];
     NEFilterManager *manager = NEFilterManager.sharedManager;
     [manager loadFromPreferencesWithCompletionHandler:^(NSError *error) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (error) {
                 self.busy = NO;
-                [self showError:error operation:@"Load before reset"];
+                [self showError:error operation:NSL(@"Load before reset")];
                 return;
             }
             self.restoreFirewallAfterReset = !self.resetAllSettings && manager.enabled;
@@ -213,7 +215,7 @@
                 dispatch_async(dispatch_get_main_queue(), ^{
                     if (removeError) {
                         self.busy = NO;
-                        [self showError:removeError operation:@"Stop filter before reset"];
+                        [self showError:removeError operation:NSL(@"Stop filter before reset")];
                         return;
                     }
                     [self finishResetWhenStopped:0];

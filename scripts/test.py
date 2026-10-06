@@ -5,12 +5,24 @@ import sys
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+subprocess.run([sys.executable, str(ROOT / "scripts/test_hosts_parser.py")], check=True)
+for script, arguments in [
+    ("check_localization.py", []),
+    ("check_localization.py", ["--self-test"]),
+    ("check_localization_bundle.py", ["--self-test"]),
+]:
+    subprocess.run([sys.executable, str(ROOT / "scripts" / script), *arguments], check=True)
 if sys.platform != "darwin":
     raise SystemExit("Native regression tests require macOS and the Xcode command-line tools.")
 
 sources = [
     "Tests/RegressionTests.m",
     "Tests/RecoveryTests.m",
+    "Tests/HostsImportTests.m",
+    "Tests/HostsDownloadTests.m",
+    "App/NSHostsDownload.m",
+    "Shared/NSHostsImport.m",
+    "Shared/NSHostsParser.c",
     "App/NSFilterRemoval.m",
     "App/NSFilterRestart.m",
     "Shared/NSPolicy.m",

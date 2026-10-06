@@ -975,6 +975,8 @@ static void TestFilterRemoval(void) {
 }
 
 extern void NSRunRecoveryTests(void);
+extern NSUInteger RunHostsImportTests(void);
+extern NSUInteger RunHostsDownloadTests(void);
 
 int main(void) {
     @autoreleasepool {
@@ -1001,6 +1003,8 @@ int main(void) {
         TestLateNotifications();
         TestFilterRemoval();
         NSRunRecoveryTests();
+        RunHostsImportTests();
+        RunHostsDownloadTests();
         CHECK([NSFileManager.defaultManager removeItemAtURL:root error:NULL]);
         NSLog(@"Passed %lu regression checks", (unsigned long)checks);
     }

@@ -1,3 +1,4 @@
+#import "../Shared/NSLocalization.h"
 #import "NSDomainResolver.h"
 #import "../Shared/NSGlobalRule.h"
 #include <dns_sd.h>
@@ -102,9 +103,9 @@ static void NSDNSAnswer(DNSServiceRef reference, DNSServiceFlags flags, uint32_t
                                           : [NSError errorWithDomain:@"NetShield2.DNS"
                                                                 code:1
                                                             userInfo:@{
-                                                                NSLocalizedDescriptionKey :
+                                                                NSLocalizedDescriptionKey : NSL(
                                                                     @"DNS lookup timed out or failed; "
-                                                                    @"previous answers expire normally."
+                                                                    @"previous answers expire normally.")
                                                             }]);
             }
         });

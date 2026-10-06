@@ -1,3 +1,4 @@
+#import "NSLocalization.h"
 #import "NSPolicy.h"
 #import "NSConstants.h"
 #import "NSDestination.h"
@@ -126,13 +127,13 @@
     }
     if (!valid) {
         if (error) {
-            *error = [NSError
-                errorWithDomain:@"NetShield2.Policy"
-                           code:1
-                       userInfo:@{
-                           NSLocalizedDescriptionKey : @"Invalid v2 policy. Filtering callbacks will block "
-                                                       @"until a valid policy is readable."
-                       }];
+            *error = [NSError errorWithDomain:@"NetShield2.Policy"
+                                         code:1
+                                     userInfo:@{
+                                         NSLocalizedDescriptionKey :
+                                             NSL(@"Invalid v2 policy. Filtering callbacks will block "
+                                                 @"until a valid policy is readable.")
+                                     }];
         }
         return nil;
     }

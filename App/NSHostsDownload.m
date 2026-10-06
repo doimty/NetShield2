@@ -293,6 +293,7 @@ static NSURL *ValidatedURL(NSString *text) {
     NSURLSession *_session;
 #if defined(NS_TESTING) && NS_TESTING
     NSArray<Class> *_testingProtocolClasses;
+    __weak NSURLSessionDataTask *_testingTask;
 #endif
 }
 + (NSURL *)validatedURLFromString:(NSString *)text error:(NSError **)error {
@@ -348,7 +349,11 @@ static NSURL *ValidatedURL(NSString *text) {
                                 cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
                             timeoutInterval:30];
     request.HTTPShouldHandleCookies = NO;
-    [[_session dataTaskWithRequest:request] resume];
+    NSURLSessionDataTask *task = [_session dataTaskWithRequest:request];
+#if defined(NS_TESTING) && NS_TESTING
+    _testingTask = task;
+#endif
+    [task resume];
 }
 - (void)cancel {
     NSAssert(NSThread.isMainThread, @"Download API is main-thread only");
@@ -377,9 +382,13 @@ static NSURL *ValidatedURL(NSString *text) {
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     [request setValue:@"must-not-forward" forHTTPHeaderField:@"Authorization"];
     [request setValue:@"must-not-forward" forHTTPHeaderField:@"Cookie"];
+    NSHTTPURLResponse *response = [[NSHTTPURLResponse alloc] initWithURL:url
+                                                              statusCode:302
+                                                             HTTPVersion:@"HTTP/1.1"
+                                                            headerFields:@{@"Location" : url.absoluteString}];
     [_delegate URLSession:_session
-                              task:nil
-        willPerformHTTPRedirection:nil
+                              task:_testingTask
+        willPerformHTTPRedirection:response
                         newRequest:request
                  completionHandler:completion];
 }
